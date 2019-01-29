@@ -1,6 +1,7 @@
 package com.bewitchment.common.entity.spirits.demons;
 
 import com.bewitchment.api.BewitchmentAPI;
+import com.bewitchment.common.entity.interfaces.IEntityCanRetreat;
 import com.bewitchment.common.entity.living.EntityMultiSkin;
 import com.bewitchment.common.entity.living.animals.*;
 import com.bewitchment.common.lib.LibMod;
@@ -32,7 +33,7 @@ import net.minecraft.world.World;
 /**
  * Created by Joseph on 12/28/2018.
  */
-public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEntity, IMob {
+public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEntity, IMob, IEntityCanRetreat {
 
 	public static final Animation ANIMATION_BITE = Animation.create(20, 10);
 	private static final ResourceLocation loot = new ResourceLocation(LibMod.MOD_ID, "entities/hellhound_alpha");
@@ -220,5 +221,10 @@ public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEn
 	@Override
 	public Animation[] getAnimations() {
 		return new Animation[]{IAnimatedEntity.NO_ANIMATION, EntityHellhoundAlpha.ANIMATION_BITE};
+	}
+
+	@Override
+	public boolean shouldRetreat() {
+		return false;
 	}
 }
