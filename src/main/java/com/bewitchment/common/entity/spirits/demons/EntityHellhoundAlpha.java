@@ -1,6 +1,7 @@
 package com.bewitchment.common.entity.spirits.demons;
 
 import com.bewitchment.api.BewitchmentAPI;
+import com.bewitchment.common.entity.ai.EntityAIRetreat;
 import com.bewitchment.common.entity.interfaces.IEntityCanRetreat;
 import com.bewitchment.common.entity.living.EntityMultiSkin;
 import com.bewitchment.common.entity.living.animals.*;
@@ -86,8 +87,10 @@ public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEn
 
 	@Override
 	protected void initEntityAI() {
-		this.tasks.addTask(1, new EntityAISwimming(this));
+		this.tasks.addTask(0, new EntityAISwimming(this));
+		this.tasks.addTask(1, new EntityAIRetreat<>(this, EntityPlayer.class, 10.0F, 0.5D, 0.75D));
 		this.tasks.addTask(3, new EntityAIAttackMelee(this, 0.3D, false));
+		this.tasks.addTask(3, new EntityAIAttackMelee(this, 1.0D, false));
 		this.tasks.addTask(5, new EntityAILookIdle(this));
 		this.tasks.addTask(4, new EntityAIWatchClosest2(this, EntityPlayer.class, 5f, 1f));
 		this.tasks.addTask(3, new EntityAIMate(this, 1d));
@@ -95,7 +98,6 @@ public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEn
 		this.targetTasks.addTask(3, new EntityAITargetNonTamed<>(this, EntityPlayer.class, true, p -> p.getDistanceSq(this) < 1));
 		this.targetTasks.addTask(4, new EntityAITargetNonTamed<EntityLivingBase>(this, EntityLivingBase.class, false, e -> e instanceof EntityRabbit || e instanceof EntityChicken || e instanceof EntityBlindworm || e instanceof EntityLizard || e instanceof EntityCow || e instanceof EntityParrot || e instanceof EntitySheep || e instanceof EntityPig || e instanceof EntityVillager || e instanceof EntityPlayer || e instanceof EntityRaven || e instanceof EntityOwl || e instanceof EntityNewt || e instanceof EntityToad || e instanceof EntitySnake || e instanceof EntityHorse || e instanceof EntityDonkey || e instanceof EntityMule || e instanceof EntityLlama || e instanceof EntityWolf || e instanceof EntityOcelot || e instanceof EntityPolarBear || e instanceof EntityUran || e.getClass().getName().equals("seraphaestus.historicizedmedicine.Mob.Rat.EntityRat")));
 		this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true));
-		this.tasks.addTask(3, new EntityAIAttackMelee(this, 1.0D, false));
 	}
 
 	@Override
@@ -225,6 +227,11 @@ public class EntityHellhoundAlpha extends EntityMultiSkin implements IAnimatedEn
 
 	@Override
 	public boolean shouldRetreat() {
-		return false;
+		return this.bossInfo.getPercent() <= 0.3F;
+	}
+
+	@Override
+	public boolean shouldRetreatHigh(){
+		return this.bossInfo.getPercent() <= 0.5F;
 	}
 }

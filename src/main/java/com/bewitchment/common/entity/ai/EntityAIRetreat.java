@@ -1,20 +1,24 @@
 package com.bewitchment.common.entity.ai;
 
 import com.bewitchment.common.entity.interfaces.IEntityCanRetreat;
+import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityCreature;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.ai.EntityAIBase;
 import net.minecraft.entity.ai.RandomPositionGenerator;
+import net.minecraft.init.Blocks;
 import net.minecraft.pathfinding.Path;
 import net.minecraft.pathfinding.PathNavigate;
 import net.minecraft.util.EntitySelectors;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.List;
-import java.util.function.Predicate;
 
-public class EntityAIRetreat<T extends EntityCreature> extends EntityAIBase {
+public class EntityAIRetreat<T extends EntityLivingBase> extends EntityAIBase {
     private final Predicate<Entity> canBeSeenSelector;
     /**
      * The entity we are attached to
@@ -23,7 +27,6 @@ public class EntityAIRetreat<T extends EntityCreature> extends EntityAIBase {
     protected T closestLivingEntity;
     private double farSpeed;
     private double nearSpeed;
-    private double safeHealDistance = 3;
     private float avoidDistance;
     /**
      * The PathEntity of our entity
@@ -61,23 +64,25 @@ public class EntityAIRetreat<T extends EntityCreature> extends EntityAIBase {
             return false;
         }
 
-        //This part almost doesn't matter
-        List<T> list = this.theEntity.getEntityWorld().getEntitiesWithinAABB(this.classToAvoid, this.theEntity.getEntityBoundingBox().expand((double) this.avoidDistance, 3.0D, (double) this.avoidDistance), Predicates.and(EntitySelectors.CAN_AI_TARGET::apply, this.canBeSeenSelector, this.avoidTargetSelector));
+        // Enemies in the vincinity
+        List<T> list = this.theEntity.getEntityWorld().getEntitiesWithinAABB(this.classToAvoid, this.theEntity.getEntityBoundingBox().expand((double) this.avoidDistance, 5.0D, (double) this.avoidDistance));
 
         if (list.isEmpty()) {
-            return true; //No entities nearby, so I can freely heal
+            return true;
         } else {
             this.closestLivingEntity = list.get(0);
-            Vec3d vec3d = RandomPositionGenerator.findRandomTargetBlockAwayFrom(this.theEntity, 16, 7, new Vec3d(this.closestLivingEntity.posX, this.closestLivingEntity.posY, this.closestLivingEntity.posZ));
+            int attempts = 0;
+            Vec3d escapePoint;
+            Vec3d enemyPos = new Vec3d(this.closestLivingEntity.posX, this.closestLivingEntity.posY, this.closestLivingEntity.posZ);
+            do {
+                if(attempts > 20)
+                    return false;
+                attempts++;
+                escapePoint = RandomPositionGenerator.findRandomTargetBlockAwayFrom(this.theEntity, 45, 3, enemyPos);
+            }while(escapePoint == null || escapePoint.distanceTo(enemyPos) < 10 || (this.theEntity.getEntityWorld().getBlockState(new BlockPos(escapePoint.x, escapePoint.y, escapePoint.z)).getBlock() != Blocks.AIR));
+            this.entityPathEntity = this.entityPathNavigate.getPathToXYZ(escapePoint.x, escapePoint.y, escapePoint.z);
+            return this.entityPathEntity != null;
 
-            if (vec3d == null) {
-                return false; //Nowhere to run, gotta fight!
-            } else if (this.closestLivingEntity.getDistanceSq(vec3d.x, vec3d.y, vec3d.z) < this.closestLivingEntity.getDistanceSq(this.theEntity)) {
-                return false; //I'll be headed off if I choose this direction.
-            } else {
-                this.entityPathEntity = this.entityPathNavigate.getPathToXYZ(vec3d.x, vec3d.y, vec3d.z);
-                return this.entityPathEntity != null;
-            }
         }
     }
 
@@ -86,7 +91,7 @@ public class EntityAIRetreat<T extends EntityCreature> extends EntityAIBase {
      */
     @Override
     public boolean shouldContinueExecuting() {
-        return (!((IEntityCanRetreat) this.theEntity).shouldRetreat());
+        return (!((IEntityCanRetreat) this.theEntity).shouldRetreatHigh());
     }
 
     /**
@@ -113,7 +118,7 @@ public class EntityAIRetreat<T extends EntityCreature> extends EntityAIBase {
     @Override
     public void updateTask() {
         if (this.closestLivingEntity != null) {
-            if (this.theEntity.getDistanceSq(this.closestLivingEntity) < 49.0D) {
+            if (this.theEntity.getDistanceSq(this.closestLivingEntity) < 15.0D) {
                 this.theEntity.getNavigator().setSpeed(this.nearSpeed);
             } else {
                 this.theEntity.getNavigator().setSpeed(this.farSpeed);
